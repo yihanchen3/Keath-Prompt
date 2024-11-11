@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Feedback</title>
+</head>
+<body>
+    <h1>Assignment Feedback</h1>
+  
+  <textarea id="jsonEditor" rows="20" cols="80">Loading...</textarea>
+  <br>
+  
+  <button onclick="saveJson()">Save Changes</button>
+  <p id="status"></p>
+
+    <script>
+    async function fetchJsonData() {
+      const assignmentId = 'A123'; // Replace with the assignment ID you want to load
+            try {
+                const response = await fetch(`/get-feedback/${assignmentId}`);
+                if (response.ok) {
+                    const data = await response.json();
+          document.getElementById('jsonEditor').value = JSON.stringify(data, null, 2);
+                } else {
+          document.getElementById('jsonEditor').value = 'Failed to load data';
+                }
+            } catch (error) {
+                console.error(error);
+        document.getElementById('jsonEditor').value = 'Error fetching data';
+            }
+        }
+
+    async function saveJson() {
+      const jsonEditor = document.getElementById('jsonEditor');
+      let editedData;
+      
+      try {
+        editedData = JSON.parse(jsonEditor.value);
+      } catch (error) {
+        document.getElementById('status').textContent = 'Invalid JSON format';
+        return;
+      }
+
+            try {
+        const response = await fetch('/update-feedback', {
+                    method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editedData)
+                });
+                
+                if (response.ok) {
+          document.getElementById('status').textContent = 'Data saved successfully!';
+          fetchJsonData();
+                } else {
+          document.getElementById('status').textContent = 'Failed to save data';
+                }
+            } catch (error) {
+                console.error(error);
+        document.getElementById('status').textContent = 'Error saving data';
+            }
+        }
+
+    window.onload = fetchJsonData;
+    </script>
+</body>
+</html>

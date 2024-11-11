@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Feedback - Updated</title>
+    <style>
+        .container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 50px;
+        }
+        .box {
+            width: 30%;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 2px 2px 12px #aaa;
+        }
+    </style>
+</head>
+<body>
+    <h1>Assignment Feedback - Updated</h1>
+    <div class="container">
+        <div class="box" id="assignment">
+            <h2>Assignment</h2>
+            <p id="assignment-text">Loading assignment details...</p>
+        </div>
+        <div class="box" id="comment">
+            <h2>Comment</h2>
+            <p id="comment-text">Generated comment will appear here...</p>
+        </div>
+        <div class="box" id="prompt">
+            <h2>Prompt</h2>
+            <textarea id="prompt-input" rows="5" style="width: 100%;"></textarea>
+            <button onclick="updatePrompt()">Refresh Comment</button>
+        </div>
+    </div>
+
+    <script>
+        async function fetchAssignmentData() {
+            const assignmentId = 'A123'; // Example assignment ID
+            try {
+                const response = await fetch(`/get-feedback/${assignmentId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('assignment-text').innerText = `Assignment ID: ${data.assignment_id}`;
+                    document.getElementById('comment-text').innerText = JSON.stringify(data.feedback, null, 2);
+                } else {
+                    document.getElementById('assignment-text').innerText = 'Failed to load assignment details';
+                }
+            } catch (error) {
+                console.error(error);
+                document.getElementById('assignment-text').innerText = 'Error fetching assignment details';
+            }
+        }
+
+        async function updatePrompt() {
+            const prompt = document.getElementById('prompt-input').value;
+            const assignmentId = 'A123'; // Example assignment ID
+
+            try {
+                const response = await fetch('/update-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ assignmentId, prompt })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('comment-text').innerText = data.new_comment;
+                } else {
+                    document.getElementById('comment-text').innerText = 'Failed to refresh comment';
+                }
+            } catch (error) {
+                console.error(error);
+                document.getElementById('comment-text').innerText = 'Error refreshing comment';
+            }
+        }
+
+        window.onload = fetchAssignmentData;
+    </script>
+</body>
+</html> 
