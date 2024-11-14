@@ -3,37 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assignment Feedback - Updated</title>
+    <title>Assignment Feedback</title>
     <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
         .container {
             display: flex;
-            justify-content: space-around;
-            margin-top: 50px;
+            flex-direction: row; /* Arrange boxes in a row */
+            height: 100vh; /* Full viewport height */
         }
         .box {
-            width: 30%;
+            flex: 1; /* Allow each box to take equal width */
             padding: 20px;
             border: 1px solid #ccc;
             border-radius: 5px;
             box-shadow: 2px 2px 12px #aaa;
+            overflow-y: auto; /* Add vertical scroll bar */
+            margin: 10px;
+        }
+        #prompt-input {
+            width: 100%;
+            height: 50vh; /* Half the viewport height */
+            box-sizing: border-box;
+        }
+        #announcement {
+            margin-top: 10px;
+            color: green;
         }
     </style>
 </head>
 <body>
-    <h1>Assignment Feedback - Updated</h1>
+    <h1>Assignment Feedback</h1>
     <div class="container">
         <div class="box" id="assignment">
-            <h2>Assignment</h2>
+            <h2>Assignment <span id="assignment-id"></span></h2>
             <p id="assignment-text">Loading assignment details...</p>
         </div>
         <div class="box" id="comment">
             <h2>Comment</h2>
             <p id="comment-text">Generated comment will appear here...</p>
+            <p id="comment-time" style="font-size: 0.9em; color: gray;"></p>
         </div>
         <div class="box" id="prompt">
             <h2>Prompt</h2>
-            <textarea id="prompt-input" rows="5" style="width: 100%;"></textarea>
+            <textarea id="prompt-input" rows="5"></textarea>
             <button onclick="updatePrompt()">Refresh Comment</button>
+            <button onclick="savePrompt()">Save</button>
+            <p id="announcement"></p>
         </div>
     </div>
 
@@ -41,17 +61,19 @@
         async function fetchAssignmentData() {
             const assignmentId = 'A123'; // Example assignment ID
             try {
-                const response = await fetch(`/get-feedback/${assignmentId}`);
+                const response = await fetch(`/get-assignment/${assignmentId}`);
                 if (response.ok) {
                     const data = await response.json();
-                    document.getElementById('assignment-text').innerText = `Assignment ID: ${data.assignment_id}`;
-                    document.getElementById('comment-text').innerText = JSON.stringify(data.feedback, null, 2);
+                    document.getElementById('assignment-id').innerText = `(${data.assignmentId})`;
+                    document.getElementById('assignment-text').innerText = data.assignmentContent;
+                    document.getElementById('prompt-input').value = data.prompt;
+                    document.getElementById('comment-text').innerText = data.comment;
+                    document.getElementById('comment-time').innerText = `Last updated: ${new Date(data.timestamp).toLocaleString()}`;
                 } else {
-                    document.getElementById('assignment-text').innerText = 'Failed to load assignment details';
+                    console.error('Failed to load assignment details');
                 }
             } catch (error) {
-                console.error(error);
-                document.getElementById('assignment-text').innerText = 'Error fetching assignment details';
+                console.error('Error fetching assignment details:', error);
             }
         }
 
@@ -71,12 +93,38 @@
                 if (response.ok) {
                     const data = await response.json();
                     document.getElementById('comment-text').innerText = data.new_comment;
+                    document.getElementById('comment-time').innerText = `Last updated: ${new Date().toLocaleString()}`;
+                    document.getElementById('announcement').innerText = 'Comment refreshed successfully.';
                 } else {
                     document.getElementById('comment-text').innerText = 'Failed to refresh comment';
                 }
             } catch (error) {
-                console.error(error);
+                console.error('Error refreshing comment:', error);
                 document.getElementById('comment-text').innerText = 'Error refreshing comment';
+            }
+        }
+
+        async function savePrompt() {
+            const prompt = document.getElementById('prompt-input').value;
+            const comment = document.getElementById('comment-text').innerText;
+            const assignmentId = 'A123'; // Example assignment ID
+
+            try {
+                const response = await fetch('/save-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ assignmentId, prompt, comment })
+                });
+
+                if (response.ok) {
+                    document.getElementById('announcement').innerText = 'Prompt and comment saved successfully.';
+                } else {
+                    console.error('Failed to save prompt and comment.');
+                }
+            } catch (error) {
+                console.error('Error saving prompt and comment:', error);
             }
         }
 

@@ -3,7 +3,7 @@ const express = require('express');
 const db = require('./database'); // Import the database connection
 const app = express();
 app.use(express.json());
-const PORT = 3001; // Use a different port to avoid conflict with the original server
+const PORT = 3000; // Use a different port to avoid conflict with the original server
 
 app.use(express.static('public')); // Serve static files from the 'public' folder
 
@@ -116,17 +116,63 @@ app.post('/update-prompt', (req, res) => {
     return res.status(400).json({ error: "Invalid data format" });
   }
 
-  // Simulate updating the prompt in the database
-  // In a real scenario, you would update the prompt in the database here
-
-  // Generate a new comment based on the updated prompt
-  const newComment = generateCommentFromPrompt(prompt);
+  // Simulate generating a new comment based on the updated prompt
+  const newComment = `Generated comment based on prompt: ${prompt}`;
 
   // Respond with the new comment
   res.json({ assignment_id: assignmentId, new_comment: newComment });
 });
 
+// Endpoint to get assignment details
+app.get('/get-assignment/:assignmentId', (req, res) => {
+  const assignmentId = req.params.assignmentId;
+
+  db.get('SELECT * FROM assignments WHERE assignmentId = ?', [assignmentId], (err, row) => {
+    if (err) {
+      console.error('Error fetching assignment:', err.message);
+      res.status(500).json({ error: 'Failed to fetch assignment' });
+    } else if (row) {
+      res.json(row);
+    } else {
+      res.status(404).json({ error: 'Assignment not found' });
+    }
+  });
+});
+
+// Endpoint to save the updated prompt and comment
+app.post('/save-prompt', (req, res) => {
+  const { assignmentId, prompt, comment } = req.body;
+
+  if (!assignmentId || !prompt || !comment) {
+    return res.status(400).json({ error: "Invalid data format" });
+  }
+
+  const updateQuery = `
+    UPDATE assignments
+    SET prompt = ?, comment = ?, timestamp = ?
+    WHERE assignmentId = ?
+  `;
+
+  db.run(updateQuery, [prompt, comment, new Date().toISOString(), assignmentId], function(err) {
+    if (err) {
+      console.error('Error updating assignment:', err.message);
+      return res.status(500).json({ error: 'Failed to update assignment' });
+    }
+
+    // Print the updated database content for debugging
+    db.all('SELECT * FROM assignments', (err, rows) => {
+      if (err) {
+        console.error('Error fetching assignments:', err.message);
+      } else {
+        console.log('Current database content:', rows);
+      }
+    });
+
+    res.json({ message: 'Prompt and comment saved successfully' });
+  });
+});
+
 // Start the server
 app.listen(PORT, () => {
-  console.log(`Updated server running at http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
 }); 
